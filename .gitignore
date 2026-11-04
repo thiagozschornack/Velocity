@@ -1,0 +1,13 @@
+# Chave de assinatura e senhas — NUNCA publicar
+*.jks
+*.keystore
+keystore.properties
+
+# Arquivos gerados pelo build
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+.DS_Store
