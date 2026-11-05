@@ -1,10 +1,22 @@
 # Gera o app Velocity GP na nuvem do GitHub (aba "Actions").
 # - Sempre: APK de teste (instala direto no celular).
 # - Se os segredos da chave estiverem cadastrados: APK e AAB assinados (o AAB vai para a Google Play).
+# - Ao rodar manualmente ("Run workflow") com o segredo PLAY_SERVICE_ACCOUNT_JSON cadastrado:
+#   envia o AAB direto para a faixa escolhida na Google Play Console.
 name: Gerar app Android
 
 on:
   workflow_dispatch:
+    inputs:
+      faixa:
+        description: 'Enviar para qual faixa da Google Play?'
+        type: choice
+        default: internal
+        options: [ nao-enviar, internal, alpha, production ]
+      notas:
+        description: 'Novidades desta versão (aparece para os jogadores)'
+        type: string
+        default: 'Melhorias de desempenho e correções.'
   push:
     branches: [ main ]
 
@@ -16,6 +28,9 @@ jobs:
       KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      # Número da versão (versionCode): sobe sozinho a cada execução do workflow
+      VERSION_CODE: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v5
 
@@ -64,3 +79,23 @@ jobs:
           path: |
             app/build/outputs/bundle/release/*.aab
             app/build/outputs/apk/release/*.apk
+
+      - name: Preparar novidades da versão
+        if: github.event_name == 'workflow_dispatch' && inputs.faixa != 'nao-enviar' && env.PLAY_JSON != '' && env.KEYSTORE_BASE64 != ''
+        env:
+          NOTAS: ${{ inputs.notas }}
+        run: |
+          mkdir -p novidades
+          printf '%s\n' "$NOTAS" > novidades/whatsnew-pt-BR
+
+      - name: Enviar para a Google Play
+        if: github.event_name == 'workflow_dispatch' && inputs.faixa != 'nao-enviar' && env.PLAY_JSON != '' && env.KEYSTORE_BASE64 != ''
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.empreenderthz.velocitygp
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          mappingFile: app/build/outputs/mapping/release/mapping.txt
+          track: ${{ inputs.faixa }}
+          status: completed
+          whatsNewDirectory: novidades

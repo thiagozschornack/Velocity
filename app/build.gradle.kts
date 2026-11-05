@@ -18,7 +18,8 @@ android {
         applicationId = "com.empreenderthz.velocitygp"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
+        // No GitHub, o número da versão sobe sozinho a cada execução (VERSION_CODE); localmente fica 1
+        versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
         versionName = "3.0.0"
     }
 
