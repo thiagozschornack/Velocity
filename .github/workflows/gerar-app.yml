@@ -96,6 +96,6 @@ jobs:
           packageName: com.empreenderthz.velocitygp
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
           mappingFile: app/build/outputs/mapping/release/mapping.txt
-          track: ${{ inputs.faixa }}
+          tracks: ${{ inputs.faixa }}
           status: completed
           whatsNewDirectory: novidades
